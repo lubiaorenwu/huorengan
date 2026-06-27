@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>活人感 · 你还在</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e1118;--bg2:#13161f;--bg3:#1a1e2a;
+  --gold:#c9a36a;--gold2:#d8b783;
+  --gold-dim:rgba(201,163,106,.18);--gold-border:rgba(201,163,106,.35);
+  --text:#e8e3da;--text2:rgba(232,227,218,.6);
+  --text3:rgba(232,227,218,.32);--text4:rgba(232,227,218,.18);
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);
+}
+html,body{width:100%;min-height:100vh;background:var(--bg);color:var(--text);
+  font-family:ui-serif,Georgia,"Songti SC","Noto Serif CJK SC",serif;overflow-x:hidden}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--gold-border);border-radius:2px}
+
+.screen{display:none;min-height:100vh;width:100%;animation:fadeIn .7s ease}
+.screen.active{display:flex;flex-direction:column}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 24px;background:rgba(14,17,24,.88);
+  backdrop-filter:blur(12px);border-bottom:.5px solid var(--border)}
+.nav-logo{font-size:15px;color:var(--gold);letter-spacing:3px;cursor:pointer}
+.nav-tabs{display:flex;gap:6px}
+.nav-tab{padding:6px 14px;border-radius:20px;font-size:12px;
+  font-family:ui-sans-serif,system-ui,sans-serif;
+  color:var(--text3);border:.5px solid transparent;cursor:pointer;
+  transition:all .25s;letter-spacing:1px;background:transparent}
+.nav-tab:hover{color:var(--text2);border-color:var(--border2)}
+.nav-tab.on{color:var(--gold);border-color:var(--gold-border);background:var(--gold-dim)}
+.nav-right{font-size:11px;color:var(--text4);font-family:ui-sans-serif,system-ui,sans-serif}
+.nav-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);
+  display:inline-block;margin-right:5px;box-shadow:0 0 6px var(--gold);
+  animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+
+/* GATE */
+#screen-gate{align-items:center;justify-content:center;text-align:center;
+  padding:40px 24px;
+  background:radial-gradient(ellipse at 50% 30%,rgba(201,163,106,.06) 0%,transparent 65%),var(--bg)}
+.gate-orb{width:120px;height:120px;border-radius:50%;margin:0 auto 40px;
+  background:radial-gradient(circle at 50% 45%,rgba(201,163,106,.45),rgba(201,163,106,.01));
+  animation:orbBreathe 5s ease-in-out infinite}
+@keyframes orbBreathe{0%,100%{transform:scale(.9);opacity:.6}50%{transform:scale(1.08);opacity:1}}
+.gate-title{font-size:48px;color:var(--gold);letter-spacing:8px;margin-bottom:16px;line-height:1}
+.gate-sub{font-size:17px;color:var(--text2);line-height:2;margin-bottom:48px;
+  max-width:400px;margin-left:auto;margin-right:auto}
+.gate-sub span{color:var(--gold2)}
+.gate-rules{display:flex;flex-direction:column;gap:10px;margin-bottom:48px;
+  max-width:320px;margin-left:auto;margin-right:auto}
+.gate-rule-item{font-size:12px;color:var(--text3);
+  font-family:ui-sans-serif,system-ui,sans-serif;letter-spacing:.5px;
+  padding:8px 16px;border:.5px solid var(--border);border-radius:24px;background:rgba(255,255,255,.02)}
+.gate-btn{display:inline-flex;align-items:center;justify-content:center;
+  height:52px;padding:0 40px;border-radius:26px;
+  border:.5px solid var(--gold-border);background:var(--gold-dim);
+  color:var(--gold2);font-size:15px;letter-spacing:3px;cursor:pointer;
+  transition:all .3s;font-family:ui-serif,Georgia,serif}
+.gate-btn:hover{background:rgba(201,163,106,.28);border-color:var(--gold);box-shadow:0 0 20px rgba(201,163,106,.2)}
+.gate-age{margin-top:20px;font-size:12px;color:var(--text4);font-family:ui-sans-serif,system-ui,sans-serif}
+
+/* PROBE */
+#screen-probe{align-items:center;justify-content:center;padding:80px 24px 40px}
+.probe-wrap{max-width:520px;width:100%}
+.probe-step-label{font-size:11px;color:var(--text3);font-family:ui-sans-serif,system-ui,sans-serif;
+  letter-spacing:2px;margin-bottom:32px;text-align:center}
+.probe-progress{display:flex;gap:6px;justify-content:center;margin-bottom:32px}
+.probe-dot{width:6px;height:6px;border-radius:50%;background:var(--border2);transition:all .3s}
+.probe-dot.done{background:var(--gold)}
+.probe-q{font-size:22px;line-height:1.7;color:var(--text);margin-bottom:32px;text-align:center;min-height:80px}
+.probe-options{display:flex;flex-direction:column;gap:12px;margin-bottom:40px}
+.probe-opt{padding:16px 20px;border-radius:14px;border:.5px solid var(--border);
+  background:rgba(255,255,255,.02);color:var(--text2);font-size:15px;
+  cursor:pointer;transition:all .25s;line-height:1.5}
+.probe-opt:hover{border-color:var(--gold-border);background:var(--gold-dim);color:var(--text)}
+.probe-opt.sel{border-color:var(--gold);background:var(--gold-dim);color:var(--gold2)}
+.probe-next{width:100%;height:48px;border-radius:24px;
+  border:.5px solid var(--gold-border);background:transparent;
+  color:var(--gold2);font-size:14px;letter-spacing:2px;cursor:pointer;
+  transition:all .25s;font-family:ui-serif,Georgia,serif}
+.probe-next:hover:not(:disabled){background:var(--gold-dim)}
+.probe-next:disabled{opacity:.3;cursor:not-allowed}
+.probe-result{text-align:center;padding:20px 0}
+.probe-result-orb{width:80px;height:80px;border-radius:50%;margin:0 auto 24px;
+  background:radial-gradient(circle at 50% 45%,rgba(201,163,106,.5),transparent);
+  animation:orbBreathe 4s ease-in-out infinite}
+.probe-result-line{font-size:20px;color:var(--gold2);line-height:1.8;margin-bottom:32px}
+.probe-result-sub{font-size:14px;color:var(--text3);font-family:ui-sans-serif,system-ui,sans-serif;line-height:2;margin-bottom:40px}
+
+/* MAIN */
+#screen-main{padding-top:60px}
+.main-content{max-width:680px;margin:0 auto;padding:40px 24px 80px}
+
+/* LISTEN */
+.listen-intro{text-align:center;margin-bottom:48px}
+.listen-intro h2{font-size:26px;color:var(--gold);letter-spacing:2px;margin-bottom:16px}
+.listen-intro p{font-size:15px;color:var(--text2);line-height:2}
+.listen-textarea-wrap{position:relative;margin-bottom:20px}
+.listen-textarea{width:100%;min-height:160px;background:rgba(255,255,255,.03);
+  border:.5px solid var(--border);border-radius:18px;padding:20px;
+  font-size:15px;line-height:1.9;color:var(--text);resize:none;
+  font-family:ui-serif,Georgia,"Songti SC",serif;outline:none;transition:border-color .25s}
+.listen-textarea:focus{border-color:var(--gold-border)}
+.listen-count{position:absolute;right:16px;bottom:14px;
+  font-size:11px;color:var(--text4);font-family:ui-sans-serif,system-ui,sans-serif}
+.listen-send{width:100%;height:52px;border-radius:26px;
+  border:.5px solid var(--gold-border);background:var(--gold-dim);
+  color:var(--gold2);font-size:15px;letter-spacing:3px;cursor:pointer;
+  transition:all .3s;font-family:ui-serif,Georgia,serif;margin-bottom:16px}
+.listen-send:hover:not(:disabled){background:rgba(201,163,106,.28);box-shadow:0 0 20px rgba(201,163,106,.15)}
+.listen-send:disabled{opacity:.35;cursor:not-allowed}
+.listen-rules{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:12px}
+.listen-rule-tag{font-size:10px;color:var(--text4);font-family:ui-sans-serif,system-ui,sans-serif;letter-spacing:.5px}
+.listen-safety{text-align:center;font-size:11px;color:var(--text4);
+  font-family:ui-sans-serif,system-ui,sans-serif;line-height:2}
+.listen-safety a{color:rgba(201,163,106,.55);text-decoration:none}
+.listen-waiting{text-align:center;padding:60px 0;display:none}
+.listen-wait-orb{width:100px;height:100px;border-radius:50%;margin:0 auto 32px;
+  background:radial-gradient(circle at 50% 45%,rgba(201,163,106,.5),rgba(201,163,106,.01));
+  animation:orbBreathe 4s ease-in-out infinite}
+.listen-wait-text{font-size:18px;color:var(--text2);line-height:2;margin-bottom:12px}
+.listen-wait-sub{font-size:13px;color:var(--text3);font-family:ui-sans-serif,system-ui,sans-serif}
+.listen-reply{display:none;padding:8px 0}
+.reply-card{background:rgba(255,255,255,.04);border:.5px solid var(--border);
+  border-radius:18px;padding:24px;margin-bottom:24px}
+.reply-label{font-size:10px;color:var(--text3);letter-spacing:2px;
+  font-family:ui-sans-serif,system-ui,sans-serif;margin-bottom:14px}
+.reply-text{font-size:16px;line-height:1.9;color:var(--text2)}
+.reply-disperse{text-align:center;font-size:13px;color:var(--text3);
+  font-family:ui-sans-serif,system-ui,sans-serif;line-height:2.2;margin-bottom:24px;
+  padding:16px;border-top:.5px solid var(--border);border-bottom:.5px solid var(--border)}
+.reply-btn{width:100%;height:44px;border-radius:22px;
+  font-size:13px;cursor:pointer;
+  font-family:ui-sans-serif,system-ui,sans-serif;transition:all .25s;margin-bottom:12px}
+.reply-bottle{border:.5px solid var(--border2);background:transparent;color:var(--text3)}
+.reply-bottle:hover{border-color:var(--gold-border);color:var(--gold2)}
+.reply-again{border:.5px solid var(--gold-border);background:transparent;color:var(--gold2)}
+.reply-again:hover{background:var(--gold-dim)}
+
+/* ECHO */
+.echo-topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px}
+.echo-topbar h2{font-size:22px;color:var(--gold);letter-spacing:2px}
+.echo-ask-btn{height:36px;padding:0 20px;border-radius:18px;
+  border:.5px solid var(--gold-border);background:var(--gold-dim);
+  color:var(--gold2);font-size:12px;cursor:pointer;letter-spacing:1px;
+  font-family:ui-sans-serif,system-ui,sans-serif;transition:all .25s}
+.echo-ask-btn:hover{background:rgba(201,163,106,.28)}
+.echo-filter{display:flex;gap:8px;margin-bottom:28px;flex-wrap:wrap}
+.echo-tag{padding:6px 14px;border-radius:16px;font-size:12px;
+  font-family:ui-sans-serif,system-ui,sans-serif;
+  color:var(--text3);border:.5px solid var(--border);cursor:pointer;transition:all .2s}
+.echo-tag:hover{color:var(--text2)}
+.echo-tag.on{color:var(--gold);border-color:var(--gold-border);background:var(--gold-dim)}
+.echo-list{display:flex;flex-direction:column;gap:20px}
+.echo-item{background:var(--bg2);border:.5px solid var(--border);
+  border-radius:16px;padding:22px;cursor:pointer;transition:all .25s}
+.echo-item:hover{border-color:var(--border2);background:var(--bg3)}
+.echo-item-tag{display:inline-block;padding:3px 10px;border-radius:12px;
+  font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif;
+  border:.5px solid var(--gold-border);color:var(--gold);background:var(--gold-dim);
+  margin-bottom:12px;letter-spacing:.5px}
+.echo-item-q{font-size:16px;color:var(--text);line-height:1.6;margin-bottom:12px}
+.echo-item-meta{font-size:11px;color:var(--text4);
+  font-family:ui-sans-serif,system-ui,sans-serif;display:flex;gap:16px}
+.echo-detail{display:none;background:var(--bg2);border:.5px solid var(--border);
+  border-radius:18px;padding:28px;margin-bottom:20px}
+.echo-q-full{font-size:18px;color:var(--text);line-height:1.7;margin-bottom:28px;
+  padding-bottom:20px;border-bottom:.5px solid var(--border)}
+.echo-answer{padding:20px 0;border-bottom:.5px solid var(--border)}
+.echo-answer:last-of-type{border-bottom:none}
+.echo-answer-text{font-size:15px;line-height:1.9;color:var(--text2);margin-bottom:12px}
+.echo-answer-meta{font-size:11px;color:var(--text4);font-family:ui-sans-serif,system-ui,sans-serif}
+.echo-back{display:inline-flex;align-items:center;gap:6px;
+  font-size:13px;color:var(--text3);cursor:pointer;
+  font-family:ui-sans-serif,system-ui,sans-serif;
+  margin-bottom:24px;transition:color .2s}
+.echo-back:hover{color:var(--gold)}
+
+/* SCROLL */
+.scroll-intro{text-align:center;margin-bottom:40px}
+.scroll-intro h2{font-size:24px;color:var(--gold);letter-spacing:2px;margin-bottom:14px}
+.scroll-intro p{font-size:14px;color:var(--text2);line-height:2;font-family:ui-sans-serif,system-ui,sans-serif}
+.scroll-form{background:var(--bg2);border:.5px solid var(--border);
+  border-radius:20px;padding:28px;margin-bottom:32px}
+.scroll-form-title{font-size:15px;color:var(--text2);margin-bottom:20px;line-height:1.7}
+.scroll-items-wrap{display:flex;flex-direction:column;gap:12px;margin-bottom:24px}
+.scroll-item-row{display:flex;align-items:center;gap:12px}
+.scroll-item-num{width:24px;height:24px;border-radius:50%;
+  border:.5px solid var(--border2);display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:var(--text3);font-family:ui-sans-serif,system-ui,sans-serif;flex-shrink:0}
+.scroll-item-input{flex:1;height:44px;background:rgba(255,255,255,.03);
+  border:.5px solid var(--border);border-radius:10px;padding:0 14px;
+  font-size:14px;color:var(--text);font-family:ui-serif,Georgia,serif;outline:none;
+  transition:border-color .25s}
+.scroll-item-input:focus{border-color:var(--gold-border)}
+.scroll-lock-btn{width:100%;height:48px;border-radius:24px;
+  border:.5px solid var(--gold-border);background:var(--gold-dim);
+  color:var(--gold2);font-size:14px;letter-spacing:2px;cursor:pointer;
+  font-family:ui-serif,Georgia,serif;transition:all .3s}
+.scroll-lock-btn:hover{background:rgba(201,163,106,.28)}
+.locked-wrap{text-align:center;padding:40px 0}
+.locked-title{font-size:20px;color:var(--gold);letter-spacing:2px;margin-bottom:16px}
+.locked-text{font-size:14px;color:var(--text2);line-height:2;
+  font-family:ui-sans-serif,system-ui,sans-serif;margin-bottom:32px}
+.locked-list{list-style:none;max-width:360px;margin:0 auto 32px}
+.locked-list-item{display:flex;align-items:center;gap:12px;
+  padding:14px 0;border-bottom:.5px solid var(--border);
+  font-size:15px;color:var(--text2);text-align:left}
+.locked-list-num{color:var(--gold);flex-shrink:0;font-size:14px}
+.locked-unlock-hint{font-size:11px;color:var(--text4);font-family:ui-sans-serif,system-ui,sans-serif;line-height:2}
+.scroll-public-label{font-size:12px;color:var(--text3);letter-spacing:2px;
+  font-family:ui-sans-serif,system-ui,sans-serif;margin-bottom:20px}
+.scroll-cards{display:flex;flex-direction:column;gap:16px}
+.scroll-card{background:var(--bg2);border:.5px solid var(--border);
+  border-radius:16px;padding:22px;transition:all .25s}
+.scroll-card:hover{border-color:var(--border2)}
+.scroll-card-items{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.scroll-card-item{display:flex;align-items:flex-start;gap:10px;
+  font-size:14px;color:var(--text2);line-height:1.6}
+.scroll-card-item::before{content:"·";color:var(--gold);flex-shrink:0;margin-top:2px}
+.scroll-card-item.done{color:var(--text3);text-decoration:line-through}
+.together-btn{height:34px;padding:0 16px;border-radius:17px;
+  border:.5px solid var(--gold-border);background:transparent;
+  color:var(--gold2);font-size:12px;cursor:pointer;
+  font-family:ui-sans-serif,system-ui,sans-serif;transition:all .25s;letter-spacing:.5px}
+.together-btn:hover{background:var(--gold-dim)}
+.scroll-card-year{font-size:11px;color:var(--text4);font-family:ui-sans-serif,system-ui,sans-serif;margin-top:14px}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);
+  z-index:200;display:none;align-items:center;justify-content:center;padding:24px}
+.modal-overlay.open{display:flex}
+.modal-card{background:var(--bg2);border:.5px solid var(--border2);
+  border-radius:20px;padding:28px;width:100%;max-width:480px;
+  animation:fadeIn .35s ease}
+.modal-title{font-size:18px;color:var(--gold);margin-bottom:8px;letter-spacing:1px}
+.modal-hint{font-size:13px;color:var(--text3);margin-bottom:20px;
+  font-family:ui-sans-serif,system-ui,sans-serif;line-height:1.7}
+.modal-input{width:100%;background:rgba(255,255,255,.03);
+  border:.5px solid var(--border);border-radius:12px;padding:14px 16px;
+  font-size:15px;color:var(--text);font-family:ui-serif,Georgia,serif;
+  outline:none;resize:none;min-height:100px;transition:border-color .25s;margin-bottom:16px}
+.modal-input:focus{border-color:var(--gold-border)}
+.modal-actions{display:flex;gap:10px}
+.modal-cancel{flex:1;height:42px;border-radius:21px;
+  border:.5px solid var(--border);background:transparent;
+  color:var(--text3);font-size:13px;cursor:pointer;font-family:ui-sans-serif,system-ui,sans-serif}
+.modal-submit{flex:2;height:42px;border-radius:21px;
+  border:.5px solid var(--gold-border);background:var(--gold-dim);
+  color:var(--gold2);font-size:13px;cursor:pointer;
+  font-family:ui-sans-serif,system-ui,sans-serif;letter-spacing:1px}
+.modal-submit:hover{background:rgba(201,163,106,.28)}
+
+/* TOAST */
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);
+  background:var(--bg3);border:.5px solid var(--gold-border);
+  border-radius:24px;padding:12px 24px;
+  font-size:13px;color:var(--gold2);font-family:ui-sans-serif,system-ui,sans-serif;
+  opacity:0;transition:opacity .4s;pointer-events:none;z-index:300;
+  white-space:nowrap;text-align:center}
+.toast.show{opacity:1}
+
+@media(max-width:480px){
+  .gate-title{font-size:36px}
+  .nav-tabs{gap:2px}
+  .nav-tab{padding:5px 10px;font-size:11px}
+  .main-content{padding:28px 16px 80px}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav" id="mainNav" style="display:none">
+  <div class="nav-logo" id="navLogo">活人感</div>
+  <div class="nav-tabs">
+    <div class="nav-tab on" data-tab="listen">倾听</div>
+    <div class="nav-tab" data-tab="echo">回声</div>
+    <div class="nav-tab" data-tab="scroll">清单</div>
+  </div>
+  <div class="nav-right"><span class="nav-dot"></span><span id="onlineCount">1,204</span> 人醒着</div>
+</nav>
+
+<!-- GATE -->
+<div id="screen-gate" class="screen active">
+  <div class="gate-orb"></div>
+  <div class="gate-title">活人感</div>
+  <div class="gate-sub">
+    你是不是也觉得<br>
+    <span>「其实我已经死了很久了」</span>
+  </div>
+  <div class="gate-rules">
+    <div class="gate-rule-item">禁止给建议 · 禁止评价</div>
+    <div class="gate-rule-item">不加好友 · 说完即散</div>
+    <div class="gate-rule-item">不显示头像 · 不显示性别年龄</div>
+  </div>
+  <div class="gate-btn" id="enterBtn">我已经 36 岁了，进去</div>
+  <div class="gate-age">36 岁以下的朋友，这里暂时不是你的地方。</div>
+</div>
+
+<!-- PROBE -->
+<div id="screen-probe" class="screen">
+  <div class="probe-wrap">
+    <div class="probe-progress" id="probeProgress"></div>
+    <div class="probe-step-label" id="probeLabel">先停一下 · 感受一下你现在在哪里</div>
+    <div id="probeBody">
+      <div class="probe-q" id="probeQ"></div>
+      <div class="probe-options" id="probeOpts"></div>
+      <button class="probe-next" id="probeNext" disabled>继续 →</button>
+    </div>
+    <div id="probeResult" style="display:none">
+      <div class="probe-result">
+        <div class="probe-result-orb"></div>
+        <div class="probe-result-line" id="probeResultLine"></div>
+        <div class="probe-result-sub" id="probeResultSub"></div>
+        <div class="gate-btn" id="probeEnterMain" style="margin:0 auto;display:inline-flex">进去吧</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="screen-main" class="screen">
+  <div class="main-content">
+
+    <!-- LISTEN TAB -->
+    <div id="tab-listen">
+      <div class="listen-intro">
+        <h2>倾听</h2>
+        <p>现在，没有人是你的谁。<br>说吧，说完就散。</p>
+      </div>
+      <div id="listenInput">
+        <div class="listen-textarea-wrap">
+          <textarea class="listen-textarea" id="listenText"
+            placeholder="随便说什么都行。不用完整，不用有逻辑，不用有结论。&#10;&#10;就是说出来。" maxlength="500"></textarea>
+          <div class="listen-count"><span id="listenLen">0</span> / 500</div>
+        </div>
+        <button class="listen-send" id="listenSend" disabled>说 出 去</button>
+        <div class="listen-rules">
+          <span class="listen-rule-tag">不显示身份</span>
+          <span class="listen-rule-tag">·</span>
+          <span class="listen-rule-tag">不加好友</span>
+          <span class="listen-rule-tag">·</span>
+          <span class="listen-rule-tag">说完即散</span>
+        </div>
+        <div class="listen-safety">
+          如果此刻真的很难熬，<a href="tel:400-161-9995">这里有人能帮你 → 400-161-9995</a>
+        </div>
+      </div>
+      <div class="listen-waiting" id="listenWaiting">
+        <div class="listen-wait-orb"></div>
+        <div class="listen-wait-text">有一个人<br>正在认真读你说的话</div>
+        <div class="listen-wait-sub">他和你一样，过了 36 岁。<br>真的听见，是需要时间的。</div>
+      </div>
+      <div class="listen-reply" id="listenReply">
+        <div class="reply-card">
+          <div class="reply-label">他 说</div>
+          <div class="reply-text" id="replyText"></div>
+        </div>
+        <div class="reply-disperse">
+          — 这段相遇到此为止 —<br>
+          <span style="color:var(--text4)">你们不会再遇见，也不必再遇见</span>
+        </div>
+        <button class="reply-btn reply-bottle" id="bottleBtn">把这段话封进瓶子，留给一年后的我</button>
+        <button class="reply-btn reply-again" id="listenAgain">再说一次</button>
+      </div>
+    </div>
+
+    <!-- ECHO TAB -->
+    <div id="tab-echo" style="display:none">
+      <div id="echoListView">
+        <div class="echo-topbar">
+          <h2>回声</h2>
+          <button class="echo-ask-btn" id="echoAskBtn">+ 我也想问</button>
+        </div>
+        <div class="echo-filter">
+          <div class="echo-tag on" data-cat="all">全部</div>
+          <div class="echo-tag" data-cat="work">关于工作</div>
+          <div class="echo-tag" data-cat="self">关于自己</div>
+          <div class="echo-tag" data-cat="family">关于家庭</div>
+          <div class="echo-tag" data-cat="future">关于未来</div>
+        </div>
+        <div class="echo-list" id="echoItemList"></div>
+      </div>
+      <div id="echoDetailView" style="display:none">
+        <div class="echo-back" id="echoBackBtn">← 回到所有问题</div>
+        <div class="echo-detail" id="echoDetailContent" style="display:block"></div>
+      </div>
+    </div>
+
+    <!-- SCROLL TAB -->
+    <div id="tab-scroll" style="display:none">
+      <div class="scroll-intro">
+        <h2>清单</h2>
+        <p>不是旅游清单。<br>是真的，不做会后悔的事。</p>
+      </div>
+      <div id="scrollFormSection">
+        <div class="scroll-form">
+          <div class="scroll-form-title">
+            写下死之前必须做的 7 件事<br>
+            <span style="font-size:12px;color:var(--text3)">写完后锁定，一年只能改一次。别人可以看，不能评价。</span>
+          </div>
+          <div class="scroll-items-wrap" id="scrollItemsWrap"></div>
+          <button class="scroll-lock-btn" id="scrollLockBtn">锁 定</button>
+        </div>
+      </div>
+      <div id="scrollLockedSection" style="display:none">
+        <div class="locked-wrap">
+          <div class="locked-title">已锁定</div>
+          <div class="locked-text">你写下来了。<br>这已经是一种开始。<br>一年后才能再改。</div>
+          <ul class="locked-list" id="lockedList"></ul>
+          <div class="locked-unlock-hint">下次修改时间：一年后</div>
+        </div>
+      </div>
+      <div class="scroll-public-label">其他人的清单</div>
+      <div class="scroll-cards" id="scrollCards"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="askModal">
+  <div class="modal-card">
+    <div class="modal-title">提一个问题</div>
+    <div class="modal-hint">只能问与「重新活过来」有关的问题。<br>回答必须是亲身经历。一题最多 3 条回答。</div>
+    <textarea class="modal-input" id="askInput" placeholder="你想问什么……" maxlength="200"></textarea>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="askCancel">取消</button>
+      <button class="modal-submit" id="askSubmit">发出去</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var PROBE_QS = [
+  {
+    q: '上一次，你纯粹因为自己想，而不是为了任何人，做了一件事——是什么时候？',
+    opts: ['上周或更近', '大概一个月前', '几个月了，想不起来', '已经不记得了']
+  },
+  {
+    q: '你现在的生活，有多少部分是「你自己想要的」，有多少是「别人需要你做的」？',
+    opts: ['大部分是我想要的', '一半一半吧', '大部分是别人需要我做的', '全部都是，已经分不清了']
+  },
+  {
+    q: '如果今天没有任何人需要你，没有任何待办事项，你不知道要做什么——这种感觉你熟悉吗？',
+    opts: ['很熟悉，经常这样', '有时候会', '偶尔', '不怎么会，我总有自己想做的']
+  }
+];
+
+var PROBE_RESULTS = [
+  {
+    line: '你还在的。\n只是陷进去太深，需要一点时间浮上来。',
+    sub: '这里的每个人都经历过或正在经历这种感觉。\n你来对了地方。'
+  },
+  {
+    line: '那个「你自己」还没死。\n他只是太久没说话了。',
+    sub: '进去说几句话吧。说出来，就是他重新开口的开始。'
+  },
+  {
+    line: '能感觉到「空」，\n说明你还有感觉。',
+    sub: '麻木和空是不一样的。\n你来这里，本身就是还想活的信号。'
+  }
+];
+
+var MOCK_REPLIES = [
+  '我也有过。有三年我每天都在替别人活，后来我开始每周留一个下午，谁都不告诉，就去做一件没用的小事。空没有马上消失，但我慢慢想起来，我还在。',
+  '听到了。我不知道该说什么，但我也曾经觉得自己只是一具会动的躯壳。有一次我一个人去海边，坐了很久，风很大，我突然哭了，哭完反而好了一点点。不知道为什么。',
+  '我也有过那种感觉——像在看着别人过我的生活。后来是一只流浪猫改变了我。不是因为它陪我，而是它需要我。那是第一次我做的事情有了真实的回声。',
+  '我听到了。你说的那种空，我能懂。我用了很长时间才意识到，我不是不想活，是失去了活给自己的理由。现在每天早上我会做一件只为我自己的小事，不管再忙。',
+  '听到了。我不多说，就想告诉你：你说出来了，这已经比很多人勇敢。'
+];
+
+var ECHO_DATA = [
+  {
+    id: 1, cat: 'self',
+    q: '有没有人是在某个很小的时刻，突然重新感觉到自己活着的？是什么？',
+    answers: [
+      { text: '有一次凌晨两点，我一个人在厨房煮了一碗泡面，加了一个荷包蛋。就那一刻，突然觉得活着挺好的。不知道为什么，可能是那个蛋，可能是那个安静。', time: '43岁 · 3天前' },
+      { text: '我开始在上班路上给自己买一杯奶茶，不是因为喜欢奶茶，而是因为那是一天里唯一一件纯粹为自己做的事。慢慢地，我又开始想给自己做别的事了。', time: '38岁 · 1周前' },
+      { text: '跑步。不是为了健康，就是想感受一下腿酸、喘气、心跳加速。身体的感觉告诉我我还活着。', time: '41岁 · 2周前' }
+    ]
+  },
+  {
+    id: 2, cat: 'work',
+    q: '在一份让你感觉「已经死了」的工作里，怎么让自己撑下去，同时不彻底变成行尸走肉？',
+    answers: [
+      { text: '我在工位抽屉里放了一张纸，上面写着「我不只是这份工作」。压力最大的时候就拉开抽屉看一眼。听起来傻，但真的有用。', time: '40岁 · 5天前' },
+      { text: '我接受了一个现实：这份工作是为了钱，不是为了意义。然后我开始在工作之外找意义。区分清楚了，工作的窒息感减少了很多。', time: '37岁 · 3周前' }
+    ]
+  },
+  {
+    id: 3, cat: 'family',
+    q: '父母老了，孩子还小，另一半和自己越来越像陌生人——有没有人是怎么在这个夹层里找到自己的？',
+    answers: [
+      { text: '我开始每周六早上六点出门走一小时，任何人都不知道我去哪里。那一小时是我的。家人起床的时候我已经回来了，但我带着那一小时进入了这一天。', time: '44岁 · 2天前' },
+      { text: '我跟老婆说了实话——我感觉自己消失了。我以为她会觉得我矫情，但她哭了，说她也一样。我们现在每个月有一次只有我们两个人的晚饭，不谈孩子不谈钱。', time: '39岁 · 1周前' },
+      { text: '接受自己是「被需要的人」这个阶段，承认它，然后在缝隙里活。逢年过节给自己一张票，去一个地方，一个人，一晚上。', time: '46岁 · 2个月前' }
+    ]
+  },
+  {
+    id: 4, cat: 'future',
+    q: '36岁以后，你是如何重新建立起对「未来」的期待的？',
+    answers: [
+      { text: '我把「未来」缩小了。以前总想「10年后我要……」，后来改成「今年我要……」，再后来变成「这个月我要……」。未来变小了，反而真实了。', time: '42岁 · 4天前' },
+      { text: '我报了一个陶艺班。不是因为我喜欢陶艺，是因为那是一件我完全不擅长、完全没必要做的事。第一次上课我做出了一个歪歪扭扭的碗，但那是我自己的碗。', time: '38岁 · 2周前' }
+    ]
+  }
+];
+
+var SCROLL_PUBLIC = [
+  {
+    items: ['给妈妈写一封真正的信，不是节日祝福', '在某个陌生城市一个人住一周', '学会做一道只有我会做的菜', '凌晨三点去看一次海', '和一个久未联系的老朋友彻夜长谈', '把那首写了一半的歌写完', '有一天什么都不做，什么都不是'],
+    done: [false, true, false, false, false, false, false],
+    year: '已写下 214 天'
+  },
+  {
+    items: ['辞掉这份工作，哪怕只休息三个月', '学一门手艺，不为赚钱', '带父亲去看他一直想去的地方', '把书架上没读的书读完三本', '跑完一次全程马拉松', '告诉某人我爱他', '在日记里写下今天有什么让我心动'],
+    done: [false, false, false, true, false, true, true],
+    year: '已写下 89 天'
+  },
+  {
+    items: ['买一台相机，记录普通的日子', '和女儿一起学她喜欢的东西', '不再假装自己还好', '去一个地方，不带手机', '把那些憋在心里的话说出来一次', '重新开始早起', '做一件十年前觉得等有钱了再说的事'],
+    done: [true, false, true, false, false, false, false],
+    year: '已写下 37 天'
+  }
+];
+
+// ── STATE ──
+var probeStep = 0;
+var probeAnswers = [];
+
+// ── UTILS ──
+function showScreen(id) {
+  var screens = document.querySelectorAll('.screen');
+  for (var i = 0; i < screens.length; i++) screens[i].classList.remove('active');
+  document.getElementById('screen-' + id).classList.add('active');
+}
+
+function showTab(name) {
+  var tabs = ['listen', 'echo', 'scroll'];
+  for (var i = 0; i < tabs.length; i++) {
+    document.getElementById('tab-' + tabs[i]).style.display = tabs[i] === name ? 'block' : 'none';
+  }
+  var navTabs = document.querySelectorAll('.nav-tab');
+  for (var j = 0; j < navTabs.length; j++) {
+    navTabs[j].classList.toggle('on', navTabs[j].getAttribute('data-tab') === name);
+  }
+}
+
+function showToast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(function () { el.classList.remove('show'); }, 2800);
+}
+
+function typeText(el, text, delay) {
+  el.textContent = '';
+  var i = 0;
+  function tick() {
+    if (i < text.length) { el.textContent += text[i]; i++; setTimeout(tick, delay); }
+  }
+  tick();
+}
+
+// ── GATE ──
+document.getElementById('enterBtn').addEventListener('click', function () {
+  showScreen('probe');
+  renderProbeStep();
+});
+
+// ── PROBE ──
+function renderProbeProgress() {
+  var wrap = document.getElementById('probeProgress');
+  wrap.innerHTML = '';
+  for (var i = 0; i < PROBE_QS.length; i++) {
+    var d = document.createElement('div');
+    d.className = 'probe-dot' + (i <= probeStep ? ' done' : '');
+    wrap.appendChild(d);
+  }
+}
+
+function renderProbeStep() {
+  renderProbeProgress();
+  if (probeStep >= PROBE_QS.length) { showProbeResult(); return; }
+  var q = PROBE_QS[probeStep];
+  document.getElementById('probeQ').textContent = q.q;
+  var opts = document.getElementById('probeOpts');
+  opts.innerHTML = '';
+  for (var i = 0; i < q.opts.length; i++) {
+    (function (idx) {
+      var el = document.createElement('div');
+      el.className = 'probe-opt';
+      el.textContent = q.opts[idx];
+      el.addEventListener('click', function () {
+        var all = opts.querySelectorAll('.probe-opt');
+        for (var k = 0; k < all.length; k++) all[k].classList.remove('sel');
+        el.classList.add('sel');
+        probeAnswers[probeStep] = idx;
+        document.getElementById('probeNext').disabled = false;
+      });
+      opts.appendChild(el);
+    })(i);
+  }
+  document.getElementById('probeNext').disabled = true;
+  document.getElementById('probeLabel').textContent = '第 ' + (probeStep + 1) + ' 题 / 共 ' + PROBE_QS.length + ' 题';
+}
+
+function showProbeResult() {
+  document.getElementById('probeBody').style.display = 'none';
+  document.getElementById('probeResult').style.display = 'block';
+  document.getElementById('probeLabel').textContent = '';
+  var sum = 0;
+  for (var i = 0; i < probeAnswers.length; i++) sum += probeAnswers[i];
+  var avg = sum / probeAnswers.length;
+  var idx = Math.min(Math.floor(avg / 1.5), PROBE_RESULTS.length - 1);
+  var r = PROBE_RESULTS[idx];
+  document.getElementById('probeResultLine').innerHTML = r.line.replace(/\n/g, '<br>');
+  document.getElementById('probeResultSub').innerHTML = r.sub.replace(/\n/g, '<br>');
+}
+
+document.getElementById('probeNext').addEventListener('click', function () {
+  probeStep++;
+  renderProbeStep();
+});
+
+document.getElementById('probeEnterMain').addEventListener('click', function () {
+  document.getElementById('mainNav').style.display = 'flex';
+  showScreen('main');
+  showTab('listen');
+});
+
+// ── NAV ──
+var navTabs = document.querySelectorAll('.nav-tab');
+for (var nt = 0; nt < navTabs.length; nt++) {
+  (function (el) {
+    el.addEventListener('click', function () { showTab(el.getAttribute('data-tab')); });
+  })(navTabs[nt]);
+}
+document.getElementById('navLogo').addEventListener('click', function () { showTab('listen'); });
+
+setInterval(function () {
+  var n = 1204 + Math.floor(Math.random() * 40 - 20);
+  document.getElementById('onlineCount').textContent = n.toLocaleString();
+}, 8000);
+
+// ── LISTEN ──
+var listenText = document.getElementById('listenText');
+var listenSend = document.getElementById('listenSend');
+
+listenText.addEventListener('input', function () {
+  var len = listenText.value.length;
+  document.getElementById('listenLen').textContent = len;
+  listenSend.disabled = len < 5;
+});
+
+listenSend.addEventListener('click', function () {
+  document.getElementById('listenInput').style.display = 'none';
+  var waiting = document.getElementById('listenWaiting');
+  waiting.style.display = 'block';
+  var delay = 3000 + Math.random() * 2000;
+  setTimeout(function () {
+    waiting.style.display = 'none';
+    var replyEl = document.getElementById('listenReply');
+    replyEl.style.display = 'block';
+    var pick = MOCK_REPLIES[Math.floor(Math.random() * MOCK_REPLIES.length)];
+    typeText(document.getElementById('replyText'), pick, 28);
+  }, delay);
+});
+
+document.getElementById('bottleBtn').addEventListener('click', function () {
+  showToast('已封进你的瓶子。一年后，我们一起看。');
+  var btn = document.getElementById('bottleBtn');
+  btn.textContent = '已封存 ✓';
+  btn.disabled = true;
+  btn.style.opacity = '0.5';
+});
+
+document.getElementById('listenAgain').addEventListener('click', function () {
+  document.getElementById('listenReply').style.display = 'none';
+  listenText.value = '';
+  document.getElementById('listenLen').textContent = '0';
+  listenSend.disabled = true;
+  var btn = document.getElementById('bottleBtn');
+  btn.textContent = '把这段话封进瓶子，留给一年后的我';
+  btn.disabled = false;
+  btn.style.opacity = '1';
+  document.getElementById('listenInput').style.display = 'block';
+});
+
+// ── ECHO ──
+function getCatLabel(cat) {
+  var m = { work: '关于工作', self: '关于自己', family: '关于家庭', future: '关于未来' };
+  return m[cat] || cat;
+}
+
+function renderEchoList(cat) {
+  var list = document.getElementById('echoItemList');
+  list.innerHTML = '';
+  var filtered = cat === 'all' ? ECHO_DATA : ECHO_DATA.filter(function (d) { return d.cat === cat; });
+  for (var i = 0; i < filtered.length; i++) {
+    (function (item) {
+      var el = document.createElement('div');
+      el.className = 'echo-item';
+      el.innerHTML = '<div class="echo-item-tag">' + getCatLabel(item.cat) + '</div>' +
+        '<div class="echo-item-q">' + item.q + '</div>' +
+        '<div class="echo-item-meta">' +
+        '<span>' + item.answers.length + ' 条亲历回答</span>' +
+        '<span>最多还可回答 ' + (3 - item.answers.length) + ' 条</span>' +
+        '</div>';
+      el.addEventListener('click', function () { showEchoDetail(item); });
+      list.appendChild(el);
+    })(filtered[i]);
+  }
+}
+
+function showEchoDetail(item) {
+  document.getElementById('echoListView').style.display = 'none';
+  document.getElementById('echoDetailView').style.display = 'block';
+  var c = document.getElementById('echoDetailContent');
+  var answersHtml = '';
+  for (var i = 0; i < item.answers.length; i++) {
+    answersHtml += '<div class="echo-answer">' +
+      '<div class="echo-answer-text">' + item.answers[i].text + '</div>' +
+      '<div class="echo-answer-meta">' + item.answers[i].time + '</div>' +
+      '</div>';
+  }
+  if (item.answers.length < 3) {
+    answersHtml += '<div style="padding:20px 0;text-align:center">' +
+      '<div style="font-size:13px;color:var(--text3);font-family:ui-sans-serif,system-ui,sans-serif;margin-bottom:12px">还有 ' + (3 - item.answers.length) + ' 个位置。如果你经历过，可以回答。</div>' +
+      '<button class="together-btn" id="writeExpBtn">写下我的经历</button></div>';
+  }
+  c.innerHTML = '<div class="echo-q-full">' + item.q + '</div>' + answersHtml;
+  var writeBtn = document.getElementById('writeExpBtn');
+  if (writeBtn) {
+    writeBtn.addEventListener('click', function () { showToast('功能完整版即将开放'); });
+  }
+}
+
+document.getElementById('echoBackBtn').addEventListener('click', function () {
+  document.getElementById('echoListView').style.display = 'block';
+  document.getElementById('echoDetailView').style.display = 'none';
+});
+
+var echoTags = document.querySelectorAll('.echo-tag');
+for (var et = 0; et < echoTags.length; et++) {
+  (function (el) {
+    el.addEventListener('click', function () {
+      var all = document.querySelectorAll('.echo-tag');
+      for (var k = 0; k < all.length; k++) all[k].classList.remove('on');
+      el.classList.add('on');
+      renderEchoList(el.getAttribute('data-cat'));
+    });
+  })(echoTags[et]);
+}
+
+document.getElementById('echoAskBtn').addEventListener('click', function () {
+  document.getElementById('askModal').classList.add('open');
+  document.getElementById('askInput').focus();
+});
+document.getElementById('askCancel').addEventListener('click', function () {
+  document.getElementById('askModal').classList.remove('open');
+});
+document.getElementById('askSubmit').addEventListener('click', function () {
+  var val = document.getElementById('askInput').value.trim();
+  if (!val) { showToast('写点什么吧'); return; }
+  document.getElementById('askModal').classList.remove('open');
+  document.getElementById('askInput').value = '';
+  showToast('问题已发出。等待有人回应。');
+});
+
+// ── SCROLL ──
+function renderScrollItems() {
+  var wrap = document.getElementById('scrollItemsWrap');
+  wrap.innerHTML = '';
+  for (var i = 1; i <= 7; i++) {
+    var row = document.createElement('div');
+    row.className = 'scroll-item-row';
+    row.innerHTML = '<div class="scroll-item-num">' + i + '</div>' +
+      '<input class="scroll-item-input" type="text" id="scrollItem' + i +
+      '" placeholder="一件不做会后悔的事……" maxlength="40">';
+    wrap.appendChild(row);
+  }
+}
+
+document.getElementById('scrollLockBtn').addEventListener('click', function () {
+  var items = [];
+  for (var i = 1; i <= 7; i++) {
+    var inp = document.getElementById('scrollItem' + i);
+    if (inp && inp.value.trim()) items.push(inp.value.trim());
+  }
+  if (items.length < 3) { showToast('至少写 3 件事吧'); return; }
+  document.getElementById('scrollFormSection').style.display = 'none';
+  document.getElementById('scrollLockedSection').style.display = 'block';
+  var ul = document.getElementById('lockedList');
+  ul.innerHTML = '';
+  for (var j = 0; j < items.length; j++) {
+    var li = document.createElement('li');
+    li.className = 'locked-list-item';
+    li.innerHTML = '<span class="locked-list-num">·</span>' + items[j];
+    ul.appendChild(li);
+  }
+  showToast('已锁定。一年后再见。');
+});
+
+function renderScrollCards() {
+  var wrap = document.getElementById('scrollCards');
+  wrap.innerHTML = '';
+  for (var ci = 0; ci < SCROLL_PUBLIC.length; ci++) {
+    (function (c, idx) {
+      var card = document.createElement('div');
+      card.className = 'scroll-card';
+      var itemsHtml = '';
+      var doneCount = 0;
+      for (var i = 0; i < c.items.length; i++) {
+        if (c.done[i]) doneCount++;
+        itemsHtml += '<li class="scroll-card-item' + (c.done[i] ? ' done' : '') + '">' + c.items[i] + '</li>';
+      }
+      card.innerHTML = '<ul class="scroll-card-items">' + itemsHtml + '</ul>' +
+        '<div><button class="together-btn" id="togetherBtn' + idx + '">我们一起去做这件事</button></div>' +
+        '<div class="scroll-card-year">' + c.year + ' · 已完成 ' + doneCount + '/7</div>';
+      wrap.appendChild(card);
+      document.getElementById('togetherBtn' + idx).addEventListener('click', function () {
+        showToast('邀请已发出。等待对方确认。');
+      });
+    })(SCROLL_PUBLIC[ci], ci);
+  }
+}
+
+// ── INIT ──
+renderEchoList('all');
+renderScrollItems();
+renderScrollCards();
+</script>
+</body>
+</html>
