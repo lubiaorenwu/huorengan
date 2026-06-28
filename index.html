@@ -349,11 +349,15 @@ textarea.compare-answer{min-height:80px;line-height:1.85}
 
 /* ── MODAL ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);
-  z-index:300;display:none;align-items:center;justify-content:center;padding:24px}
+  z-index:300;display:none;align-items:center;justify-content:center;padding:20px}
 .modal-overlay.open{display:flex}
 .modal-box{background:var(--bg2);border:.5px solid var(--border2);
-  border-radius:20px;padding:28px;width:100%;max-width:480px;
-  animation:fadeUp .3s ease}
+  border-radius:20px;width:100%;max-width:480px;
+  max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
+  animation:fadeUp .3s ease; box-shadow: 0 20px 40px rgba(0,0,0,0.5);}
+.modal-header{padding: 24px 24px 16px; border-bottom: .5px solid var(--border); flex-shrink: 0;}
+.modal-body{padding: 24px; overflow-y: auto; flex: 1; min-height: 0;}
+.modal-footer{padding: 16px 24px 24px; border-top: .5px solid var(--border); display: flex; gap: 10px; background: var(--bg2); flex-shrink: 0;}
 .modal-title{font-size:17px;color:var(--gold);margin-bottom:6px;letter-spacing:1px}
 .modal-hint{font-size:12px;color:var(--text3);
   font-family:ui-sans-serif,system-ui,sans-serif;line-height:1.8;margin-bottom:18px}
@@ -544,29 +548,33 @@ textarea.compare-answer{min-height:80px;line-height:1.85}
 <!-- 写秘密/遗憾 MODAL -->
 <div class="modal-overlay" id="writeModal">
   <div class="modal-box" style="max-width:560px">
-    <div class="modal-title">封存此刻的你</div>
-    <div class="modal-hint">
-      写下只有未来的你才能看见的话。一年后，它会在原处等你。<br>
-      <span style="color:var(--gold2); display: inline-block; margin-top: 4px;">（数据声明：本程序无服务器，数据 100% 存在你当前设备的浏览器缓存（LocalStorage）中。请勿清理浏览器缓存，否则秘密将永远丢失。）</span>
-    </div>
-    <div class="write-sections">
-      <div>
-        <div class="write-section-label">秘密</div>
-        <div class="write-section-hint">你从没告诉过任何人的话。</div>
-        <textarea class="write-area" id="writeSecret" placeholder="此刻最真实的你……" rows="4"></textarea>
-      </div>
-      <div>
-        <div class="write-section-label">遗憾</div>
-        <div class="write-section-hint">那些来不及的、没敢做的、失去的。（最多 5 条）</div>
-        <div class="regret-list" id="regretList"></div>
-      </div>
-      <div>
-        <div class="write-section-label">渴望</div>
-        <div class="write-section-hint">一年后，你想成为什么样的人？（最多 3 条）</div>
-        <div class="future-list" id="futureList"></div>
+    <div class="modal-header">
+      <div class="modal-title">封存此刻的你</div>
+      <div class="modal-hint" style="margin-bottom:0">
+        写下只有未来的你才能看见的话。一年后，它会在原处等你。<br>
+        <span style="color:var(--gold2); display: inline-block; margin-top: 4px;">（数据声明：本程序无服务器，数据 100% 存在你当前设备的浏览器缓存（LocalStorage）中。请勿清理浏览器缓存，否则秘密将永远丢失。）</span>
       </div>
     </div>
-    <div class="modal-actions">
+    <div class="modal-body">
+      <div class="write-sections">
+        <div>
+          <div class="write-section-label">秘密</div>
+          <div class="write-section-hint">你从没告诉过任何人的话。</div>
+          <textarea class="write-area" id="writeSecret" placeholder="此刻最真实的你……" rows="4"></textarea>
+        </div>
+        <div>
+          <div class="write-section-label">遗憾</div>
+          <div class="write-section-hint">那些来不及的、没敢做的、失去的。（最多 5 条）</div>
+          <div class="regret-list" id="regretList"></div>
+        </div>
+        <div>
+          <div class="write-section-label">渴望</div>
+          <div class="write-section-hint">一年后，你想成为什么样的人？（最多 3 条）</div>
+          <div class="future-list" id="futureList"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
       <button class="modal-cancel" id="writeCancel">取消</button>
       <button class="modal-submit" id="writeSeal">封 存</button>
     </div>
@@ -575,11 +583,14 @@ textarea.compare-answer{min-height:80px;line-height:1.85}
 
 <!-- 对标 MODAL -->
 <div class="modal-overlay" id="compareModal">
-  <div class="modal-box" style="max-width:600px;max-height:90vh;overflow-y:auto">
-    <div class="compare-title">一年后，你回来了</div>
-    <div class="compare-sub" id="compareSubTitle"></div>
-    <div id="compareContent"></div>
-    <div class="modal-actions" style="margin-top:24px">
+  <div class="modal-box" style="max-width:600px">
+    <div class="modal-header">
+      <div class="compare-title">一年后，你回来了</div>
+      <div class="compare-sub" id="compareSubTitle" style="margin-bottom:0"></div>
+    </div>
+    <div class="modal-body" id="compareContent">
+    </div>
+    <div class="modal-footer">
       <button class="modal-cancel" id="compareClose">先关上，再想想</button>
       <button class="modal-submit" id="compareWrite">写下今年的自己</button>
     </div>
@@ -589,10 +600,14 @@ textarea.compare-answer{min-height:80px;line-height:1.85}
 <!-- 提问 MODAL -->
 <div class="modal-overlay" id="askModal">
   <div class="modal-box">
-    <div class="modal-title">提一个问题</div>
-    <div class="modal-hint">只能问与「重新活过来」有关的问题。回答必须是亲身经历。一题最多 3 条回答。</div>
-    <textarea id="askInput" placeholder="你想问什么……" maxlength="200" rows="3"></textarea>
-    <div class="modal-actions">
+    <div class="modal-header">
+      <div class="modal-title">提一个问题</div>
+      <div class="modal-hint" style="margin-bottom:0">只能问与「重新活过来」有关的问题。回答必须是亲身经历。一题最多 3 条回答。</div>
+    </div>
+    <div class="modal-body">
+      <textarea id="askInput" placeholder="你想问什么……" maxlength="200" rows="3"></textarea>
+    </div>
+    <div class="modal-footer">
       <button class="modal-cancel" id="askCancel">取消</button>
       <button class="modal-submit" id="askSubmit">发出去</button>
     </div>
