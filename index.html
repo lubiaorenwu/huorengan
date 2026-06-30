@@ -418,6 +418,23 @@ textarea.compare-answer{min-height:80px;line-height:1.85}
   font-family:ui-sans-serif,system-ui,sans-serif;transition:color .2s;margin-top:28px;text-align:center}
 .admin-gate-link:hover{color:var(--text3)}
 
+/* ── MUSIC TOGGLE ── */
+#musicToggle{position:fixed;bottom:24px;right:24px;z-index:300;
+  width:40px;height:40px;border-radius:50%;
+  border:.5px solid var(--border2);background:var(--bg2);
+  color:var(--text3);font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .4s;backdrop-filter:blur(8px);
+  font-family:ui-sans-serif,system-ui,sans-serif}
+#musicToggle:hover{border-color:var(--gold-border);color:var(--gold)}
+#musicToggle.playing{border-color:var(--gold-border);color:var(--gold);
+  box-shadow:0 0 14px var(--gold-dim);animation:musicPulse 4s ease-in-out infinite}
+@keyframes musicPulse{0%,100%{box-shadow:0 0 8px var(--gold-dim)}50%{box-shadow:0 0 22px var(--gold-dim2)}}
+#musicTooltip{position:fixed;bottom:72px;right:24px;z-index:299;
+  font-size:11px;color:var(--text3);font-family:ui-sans-serif,system-ui,sans-serif;
+  opacity:0;transition:opacity .5s;pointer-events:none}
+#musicToggle:hover + #musicTooltip{opacity:1}
+
 @media(max-width:500px){
   .gate-title{font-size:34px}
   .compare-grid{grid-template-columns:1fr}
@@ -1422,6 +1439,114 @@ function escHtml(str){
 }
 
 // ══════════════════════════════════════════════════
+// AMBIENT MUSIC (Web Audio API)
+// ══════════════════════════════════════════════════
+var musicPlaying = false;
+var musicCtx = null;
+var musicNodes = [];
+
+function initMusic(){
+  if (musicCtx) return;
+  musicCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function startMusic(){
+  initMusic();
+  if (musicPlaying) return;
+  if (musicCtx.state === 'suspended') musicCtx.resume();
+
+  var now = musicCtx.currentTime;
+  var master = musicCtx.createGain();
+  master.gain.setValueAtTime(0, now);
+  master.gain.linearRampToValueAtTime(0.22, now + 3);
+  master.connect(musicCtx.destination);
+  musicNodes.push(master);
+
+  // Warm drone: two slightly detuned sine waves + sub octave
+  var baseFreq = 87.31; // F2
+  [1, 1.0034, 0.5].forEach(function(ratio, i){
+    var osc = musicCtx.createOscillator();
+    osc.type = i === 2 ? 'sine' : 'sine';
+    osc.frequency.setValueAtTime(baseFreq * ratio, now);
+    // Slow microtonal drift
+    osc.frequency.linearRampToValueAtTime(baseFreq * ratio * 1.002, now + 30);
+    osc.frequency.linearRampToValueAtTime(baseFreq * ratio * 0.998, now + 60);
+
+    var g = musicCtx.createGain();
+    g.gain.setValueAtTime(i === 2 ? 0.3 : 0.18, now);
+    // Slow breathing
+    var lfo = musicCtx.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.setValueAtTime(0.07, now);
+    var lfoGain = musicCtx.createGain();
+    lfoGain.gain.setValueAtTime(0.06, now);
+    lfo.connect(lfoGain);
+    lfoGain.connect(g.gain);
+    lfo.start(now);
+    musicNodes.push(lfo);
+
+    osc.connect(g);
+    g.connect(master);
+    osc.start(now);
+    musicNodes.push(osc);
+  });
+
+  // Soft fifth harmonic — distant, shimmering
+  var fifth = musicCtx.createOscillator();
+  fifth.type = 'sine';
+  fifth.frequency.setValueAtTime(baseFreq * 1.5, now);
+  var fg = musicCtx.createGain();
+  fg.gain.setValueAtTime(0, now);
+  fg.gain.linearRampToValueAtTime(0.08, now + 6);
+  // Slow shimmer LFO
+  var shLfo = musicCtx.createOscillator();
+  shLfo.type = 'sine';
+  shLfo.frequency.setValueAtTime(0.11, now);
+  var shLfoG = musicCtx.createGain();
+  shLfoG.gain.setValueAtTime(0.04, now);
+  shLfo.connect(shLfoG);
+  shLfoG.connect(fg.gain);
+  shLfo.start(now);
+  musicNodes.push(shLfo);
+
+  fifth.connect(fg);
+  fg.connect(master);
+  fifth.start(now);
+  musicNodes.push(fifth);
+
+  musicPlaying = true;
+}
+
+function stopMusic(){
+  if (!musicPlaying) return;
+  var now = musicCtx.currentTime;
+  // Fade out
+  var master = musicNodes[0];
+  master.gain.linearRampToValueAtTime(0, now + 2.5);
+  setTimeout(function(){
+    musicNodes.forEach(function(n){
+      try { n.stop(); } catch(e) {}
+      try { n.disconnect(); } catch(e) {}
+    });
+    musicNodes = [];
+    musicPlaying = false;
+  }, 2800);
+}
+
+document.getElementById('musicToggle').addEventListener('click', function(){
+  var btn = document.getElementById('musicToggle');
+  if (musicPlaying) {
+    stopMusic();
+    btn.classList.remove('playing');
+    btn.textContent = '♪';
+  } else {
+    startMusic();
+    btn.classList.add('playing');
+    btn.textContent = '♫';
+  }
+});
+
+// ══════════════════════════════════════════════════
 // URL params
 // ══════════════════════════════════════════════════
 (function(){
@@ -1479,6 +1604,10 @@ function escHtml(str){
     <div class="admin-gate-link" id="adminGateLink">Ctrl+Shift+A 打开管理面板</div>
   </div>
 </div>
+
+<!-- ══ MUSIC ══ -->
+<button id="musicToggle" title="背景音乐">♪</button>
+<span id="musicTooltip">背景音乐</span>
 
 </body>
 </html>
