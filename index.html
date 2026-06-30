@@ -1552,9 +1552,10 @@ document.getElementById('musicToggle').addEventListener('click', function(){
 // ══════════════════════════════════════════════════
 (function(){
   var params = new URLSearchParams(window.location.search);
-  // ?admin — open admin panel directly
+  // ?admin — redirect to dedicated admin page
   if (params.has('admin')) {
-    setTimeout(function(){ renderAdmin(); document.getElementById('adminOverlay').classList.add('show'); }, 200);
+    window.location.replace('./admin.html');
+    return;
   }
   var inviteParam = params.get('invite');
   if (inviteParam) {
