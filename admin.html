@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>活人感 · 管理</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1017;--bg2:#13161f;--bg3:#1a1e2a;
+  --gold:#c9a36a;--gold2:#d8b783;
+  --gold-dim:rgba(201,163,106,.15);--gold-dim2:rgba(201,163,106,.25);
+  --gold-border:rgba(201,163,106,.32);--gold-border2:rgba(201,163,106,.55);
+  --text:#e8e3da;--text2:rgba(232,227,218,.65);
+  --text3:rgba(232,227,218,.35);--text4:rgba(232,227,218,.18);
+  --border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.11);
+  --red-dim:rgba(220,80,80,.15);--red-border:rgba(220,80,80,.4);--red:#e06060;
+}
+body{background:var(--bg);color:var(--text);
+  font-family:ui-serif,Georgia,"Songti SC","Noto Serif CJK SC",serif;
+  min-height:100vh;padding:48px 24px 80px}
+.container{max-width:720px;margin:0 auto}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:36px}
+.header h1{font-size:20px;color:var(--gold);letter-spacing:3px}
+.header a{font-size:12px;color:var(--text3);text-decoration:none;
+  font-family:ui-sans-serif,system-ui,sans-serif;transition:color .2s}
+.header a:hover{color:var(--gold)}
+.stats{display:flex;gap:12px;margin-bottom:36px;flex-wrap:wrap}
+.stat{flex:1;min-width:100px;background:var(--bg2);border:.5px solid var(--border);
+  border-radius:14px;padding:20px;text-align:center}
+.stat-num{font-size:32px;color:var(--gold);font-family:ui-sans-serif,system-ui,sans-serif}
+.stat-label{font-size:11px;color:var(--text3);font-family:ui-sans-serif,system-ui,sans-serif;margin-top:4px}
+.section{margin-bottom:36px}
+.section h2{font-size:15px;color:var(--text2);margin-bottom:16px;letter-spacing:1px;
+  font-family:ui-sans-serif,system-ui,sans-serif}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px 12px;font-size:11px;color:var(--text4);
+  font-family:ui-sans-serif,system-ui,sans-serif;font-weight:400;
+  border-bottom:.5px solid var(--border);letter-spacing:.5px}
+td{padding:10px 12px;font-size:13px;color:var(--text2);
+  border-bottom:.5px solid var(--border);font-family:ui-sans-serif,system-ui,sans-serif}
+tr:hover td{background:var(--bg2)}
+.empty{font-size:13px;color:var(--text3);font-family:ui-sans-serif,system-ui,sans-serif;
+  padding:20px 0}
+.badge{display:inline-block;padding:3px 12px;border-radius:12px;
+  font-size:11px;font-family:ui-sans-serif,system-ui,sans-serif;letter-spacing:1px}
+.badge.valid{background:var(--gold-dim);color:var(--gold2);border:.5px solid var(--gold-border)}
+.badge.used{background:var(--red-dim);color:var(--red);border:.5px solid var(--red-border)}
+.copy-link{color:var(--gold);cursor:pointer;font-size:11px;
+  font-family:ui-sans-serif,system-ui,sans-serif;transition:opacity .2s}
+.copy-link:hover{opacity:.7}
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);
+  background:var(--bg3);border:.5px solid var(--gold-border);
+  border-radius:22px;padding:11px 24px;
+  font-size:12px;color:var(--gold2);font-family:ui-sans-serif,system-ui,sans-serif;
+  opacity:0;transition:opacity .35s;pointer-events:none;z-index:100;
+  white-space:nowrap}
+.toast.show{opacity:1}
+.add-form{margin-top:20px;display:flex;gap:10px;align-items:flex-end}
+.add-form input{flex:1;background:rgba(255,255,255,.03);border:.5px solid var(--border);
+  border-radius:10px;padding:10px 14px;font-size:14px;color:var(--text);
+  font-family:ui-sans-serif,system-ui,sans-serif;outline:none;transition:border-color .2s}
+.add-form input:focus{border-color:var(--gold-border)}
+.add-form button{height:42px;padding:0 20px;border-radius:21px;
+  border:.5px solid var(--gold-border2);background:var(--gold-dim2);
+  color:var(--gold2);font-size:13px;letter-spacing:1px;cursor:pointer;
+  font-family:ui-serif,Georgia,serif;transition:all .2s;white-space:nowrap}
+.add-form button:hover{background:rgba(201,163,106,.32)}
+.footer{text-align:center;margin-top:60px;font-size:11px;color:var(--text4);
+  font-family:ui-sans-serif,system-ui,sans-serif}
+.footer a{color:var(--text3);text-decoration:none}
+.footer a:hover{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>⛩ 活人感 · 管理</h1>
+    <a href="./">← 回首页</a>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="section">
+    <h2>注册用户</h2>
+    <div id="usersTable"></div>
+  </div>
+
+  <div class="section">
+    <h2>邀请码</h2>
+    <div id="invitesTable"></div>
+    <div class="add-form">
+      <input type="text" id="newCodeInput" placeholder="输入新邀请码，回车添加" autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:2px">
+      <button id="addCodeBtn">添加</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="./">活人感</a> · 数据只存在你自己的浏览器里
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var STORE_KEY = 'huorengan_v1';
+var INVITE_KEY = 'huorengan_invites';
+
+function loadStore(){
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch(e) { return {}; }
+}
+function loadInvites(){
+  var raw = localStorage.getItem(INVITE_KEY);
+  if (!raw) {
+    // Seed default codes if none exist
+    var DEFAULT_INVITES = ['HUOREN2025','ZISHU2025','XIUDAO2025','HUOREN2026','ZISHU2026'];
+    var seed = { valid: {}, used: {} };
+    for (var i=0;i<DEFAULT_INVITES.length;i++) {
+      seed.valid[DEFAULT_INVITES[i]] = { createdAt: Date.now(), note: '种子邀请码' };
+    }
+    saveInvites(seed);
+    return seed;
+  }
+  try { return JSON.parse(raw); } catch(e) { return { valid:{}, used:{} }; }
+}
+function saveInvites(data){
+  try { localStorage.setItem(INVITE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+function escHtml(str){
+  var d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function showToast(msg){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 2000);
+}
+
+function render(){
+  var store = loadStore();
+  var users = store.users || {};
+  var userList = [];
+  for (var email in users) {
+    if (users.hasOwnProperty(email)) {
+      userList.push({ email: email, data: users[email] });
+    }
+  }
+  userList.sort(function(a,b){ return b.data.createdAt - a.data.createdAt; });
+
+  var inv = loadInvites();
+  var validCount = Object.keys(inv.valid).length;
+  var usedCount = Object.keys(inv.used).length;
+
+  // Stats
+  document.getElementById('stats').innerHTML =
+    '<div class="stat"><div class="stat-num">'+userList.length+'</div><div class="stat-label">注册用户</div></div>'+
+    '<div class="stat"><div class="stat-num">'+validCount+'</div><div class="stat-label">剩余邀请码</div></div>'+
+    '<div class="stat"><div class="stat-num">'+usedCount+'</div><div class="stat-label">已用邀请码</div></div>';
+
+  // Users table
+  var userHtml = '';
+  if (userList.length === 0) {
+    userHtml = '<div class="empty">还没有人注册</div>';
+  } else {
+    userHtml = '<table><tr><th>邮箱</th><th>注册时间</th><th>胶囊数</th></tr>';
+    for (var ui=0;ui<userList.length;ui++) {
+      var u = userList[ui];
+      var d = new Date(u.data.createdAt);
+      var ds = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+
+        String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+
+        String(d.getMinutes()).padStart(2,'0');
+      userHtml += '<tr><td>'+escHtml(u.email)+'</td><td>'+ds+'</td><td>'+
+        ((u.data.capsules && u.data.capsules.length) || 0)+'</td></tr>';
+    }
+    userHtml += '</table>';
+  }
+  document.getElementById('usersTable').innerHTML = userHtml;
+
+  // Invites table
+  var codes = {};
+  for (var c in inv.valid) { if (inv.valid.hasOwnProperty(c)) codes[c] = { status:'valid', info:inv.valid[c] }; }
+  for (var c2 in inv.used) { if (inv.used.hasOwnProperty(c2)) codes[c2] = { status:'used', info:inv.used[c2] }; }
+  var codeKeys = Object.keys(codes).sort();
+
+  var inviteHtml = '';
+  if (codeKeys.length === 0) {
+    inviteHtml = '<div class="empty">暂无邀请码</div>';
+  } else {
+    inviteHtml = '<table><tr><th>邀请码</th><th>状态</th><th>使用者</th><th>时间</th><th></th></tr>';
+    for (var ci=0;ci<codeKeys.length;ci++) {
+      var code = codeKeys[ci];
+      var cd = codes[code];
+      var badge = cd.status==='valid'
+        ? '<span class="badge valid">可用</span>'
+        : '<span class="badge used">已用</span>';
+      var user = cd.status==='used' ? escHtml(cd.info.email||'') : '—';
+      var timeStr = '—';
+      if (cd.info.usedAt) {
+        var d2 = new Date(cd.info.usedAt);
+        timeStr = d2.getFullYear()+'-'+String(d2.getMonth()+1).padStart(2,'0')+'-'+String(d2.getDate()).padStart(2,'0');
+      } else if (cd.info.createdAt) {
+        var d3 = new Date(cd.info.createdAt);
+        timeStr = d3.getFullYear()+'-'+String(d3.getMonth()+1).padStart(2,'0')+'-'+String(d3.getDate()).padStart(2,'0');
+      }
+      var linkCell = cd.status==='valid'
+        ? '<span class="copy-link" onclick="copyLink(\''+escHtml(code)+'\')">📋 复制推广链接</span>'
+        : '';
+      inviteHtml += '<tr><td style="letter-spacing:2px">'+escHtml(code)+'</td><td>'+badge+'</td><td>'+user+'</td><td>'+timeStr+'</td><td>'+linkCell+'</td></tr>';
+    }
+    inviteHtml += '</table>';
+  }
+  document.getElementById('invitesTable').innerHTML = inviteHtml;
+}
+
+function copyLink(code){
+  var link = window.location.origin + window.location.pathname.replace('admin.html','') + '?invite=' + encodeURIComponent(code);
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(link).then(function(){ showToast('推广链接已复制！'); });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = link; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('推广链接已复制！');
+  }
+}
+
+function addCode(){
+  var input = document.getElementById('newCodeInput');
+  var code = input.value.trim().toUpperCase();
+  if (!code) { showToast('请输入邀请码'); return; }
+  if (!/^[A-Z0-9]{4,20}$/.test(code)) { showToast('邀请码只能包含大写字母和数字，4-20位'); return; }
+  var inv = loadInvites();
+  if (inv.valid[code] || inv.used[code]) { showToast('这个邀请码已存在'); return; }
+  inv.valid[code] = { createdAt: Date.now(), note: '手动添加' };
+  saveInvites(inv);
+  input.value = '';
+  render();
+  showToast('邀请码 '+code+' 已添加');
+}
+
+document.getElementById('addCodeBtn').addEventListener('click', addCode);
+document.getElementById('newCodeInput').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') { e.preventDefault(); addCode(); }
+});
+
+render();
+</script>
+</body>
+</html>
