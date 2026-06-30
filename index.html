@@ -843,6 +843,39 @@ function simpleHash(str) {
   return h.toString(16);
 }
 
+// ── WEBHOOK NOTIFICATION ──
+function notifyWebhook(email, inviteCode){
+  var url = localStorage.getItem('huorengan_webhook_url');
+  if (!url) return;
+  var payload = JSON.stringify({
+    event: 'user_registered',
+    email: email,
+    inviteCode: inviteCode || '',
+    timestamp: new Date().toISOString(),
+    site: '活人感'
+  });
+  // sendBeacon — fire-and-forget, no CORS issues
+  try {
+    var blob = new Blob([payload], {type: 'application/json'});
+    navigator.sendBeacon(url, blob);
+  } catch(e) {
+    // silently fail — webhook is optional
+  }
+}
+
+// ── SERVER NOTIFICATION ──
+function notifyServer(email, inviteCode){
+  var serverUrl = localStorage.getItem('huorengan_server_url');
+  if (!serverUrl) return;
+  try {
+    fetch(serverUrl.replace(/\/+$/,'') + '/register', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email: email, inviteCode: inviteCode || ''})
+    }).catch(function(){});
+  } catch(e) {}
+}
+
 // ══════════════════════════════════════════════════
 // GATE
 // ══════════════════════════════════════════════════
@@ -904,6 +937,10 @@ document.getElementById('authSubmit').addEventListener('click', function(){
     });
     setSession(email);
     enterMain();
+    // Fire-and-forget webhook notification (if configured)
+    notifyWebhook(email, inviteCode);
+    // Send to server backend (if configured)
+    notifyServer(email, inviteCode);
   } else {
     var u = getUser(email);
     if (!u) { errEl.textContent = '没有找到这个账号'; return; }

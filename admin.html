@@ -95,6 +95,18 @@ tr:hover td{background:var(--bg2)}
     </div>
   </div>
 
+  <div class="section">
+    <h2>注册通知 · 服务器地址</h2>
+    <p style="font-size:12px;color:var(--text3);font-family:ui-sans-serif,system-ui,sans-serif;line-height:1.8;margin-bottom:12px">
+      填了之后，有人注册时会 POST 到这个地址的 /register。管理页面同时从 /registrations 拉取数据。
+    </p>
+    <div class="add-form" style="margin-top:0">
+      <input type="text" id="serverUrl" placeholder="https://your-server.com" autocomplete="off">
+      <button id="saveServerBtn">保存</button>
+    </div>
+    <div id="serverStatus" style="font-size:11px;color:var(--text4);font-family:ui-sans-serif,system-ui,sans-serif;margin-top:6px"></div>
+  </div>
+
   <div class="footer">
     <a href="./">活人感</a> · 数据只存在你自己的浏览器里
   </div>
@@ -247,6 +259,82 @@ document.getElementById('addCodeBtn').addEventListener('click', addCode);
 document.getElementById('newCodeInput').addEventListener('keydown', function(e){
   if (e.key === 'Enter') { e.preventDefault(); addCode(); }
 });
+
+// ── Server URL ──
+var SERVER_KEY = 'huorengan_server_url';
+var serverUrlInput = document.getElementById('serverUrl');
+var serverStatus = document.getElementById('serverStatus');
+
+// Load saved server URL
+var savedServer = localStorage.getItem(SERVER_KEY);
+if (savedServer) {
+  serverUrlInput.value = savedServer;
+  serverStatus.textContent = '已配置 · 点击保存更新';
+  serverStatus.style.color = 'var(--gold)';
+}
+
+document.getElementById('saveServerBtn').addEventListener('click', function(){
+  var url = serverUrlInput.value.trim().replace(/\/+$/,'');
+  if (!url) {
+    localStorage.removeItem(SERVER_KEY);
+    serverStatus.textContent = '已清除';
+    serverStatus.style.color = 'var(--text4)';
+    return;
+  }
+  localStorage.setItem(SERVER_KEY, url);
+  serverStatus.textContent = '已保存 · 正在拉取服务器数据...';
+  serverStatus.style.color = 'var(--gold)';
+  fetchServerRegistrations();
+});
+
+// Fetch from server
+function fetchServerRegistrations(){
+  var url = localStorage.getItem(SERVER_KEY);
+  if (!url) return;
+  fetch(url + '/registrations')
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      window._serverData = data.registrations || [];
+      serverStatus.textContent = '已保存 · 服务器返回 ' + window._serverData.length + ' 条注册记录';
+      render();
+    })
+    .catch(function(){
+      serverStatus.textContent = '已保存 · 无法连接服务器';
+      serverStatus.style.color = 'var(--red)';
+    });
+}
+
+// Override render to merge server data
+var _origRender = render;
+render = function(){
+  _origRender();
+  var serverData = window._serverData || [];
+  if (serverData.length === 0) return;
+
+  // Update stats card with server count
+  var store = loadStore();
+  var users = store.users || {};
+  var localCount = Object.keys(users).length;
+  document.getElementById('stats').innerHTML =
+    '<div class="stat"><div class="stat-num">'+serverData.length+'</div><div class="stat-label">服务器注册</div></div>'+
+    '<div class="stat"><div class="stat-num">'+localCount+'</div><div class="stat-label">本地注册</div></div>'+
+    '<div class="stat"><div class="stat-num">'+Object.keys(loadInvites().valid).length+'</div><div class="stat-label">剩余邀请码</div></div>';
+
+  // Prepend server users to the table if no local users
+  if (localCount === 0 || true) {
+    var serverHtml = '<h2 style="margin-top:36px">服务器注册记录</h2>';
+    serverHtml += '<table><tr><th>邮箱</th><th>邀请码</th><th>注册时间</th></tr>';
+    for (var i=0;i<serverData.length;i++) {
+      var r = serverData[i];
+      serverHtml += '<tr><td>'+escHtml(r.email)+'</td><td style="letter-spacing:1px">'+escHtml(r.inviteCode||'—')+'</td><td>'+escHtml(r.createdAt||'')+'</td></tr>';
+    }
+    serverHtml += '</table>';
+    document.getElementById('usersTable').insertAdjacentHTML('afterend', '<div class="section" id="serverUsers">'+serverHtml+'</div>');
+  }
+};
+
+// Initial fetch
+if (savedServer) { fetchServerRegistrations(); }
 
 render();
 </script>
