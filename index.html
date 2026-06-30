@@ -1445,84 +1445,77 @@ var musicPlaying = false;
 var musicCtx = null;
 var musicNodes = [];
 
-function initMusic(){
-  if (musicCtx) return;
-  musicCtx = new (window.AudioContext || window.webkitAudioContext)();
+function startMusic(){
+  if (musicPlaying) return;
+  if (!musicCtx) {
+    musicCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (musicCtx.state === 'suspended') {
+    musicCtx.resume().then(function(){
+      _startMusicNow();
+    });
+  } else {
+    _startMusicNow();
+  }
 }
 
-function startMusic(){
-  initMusic();
+function _startMusicNow(){
   if (musicPlaying) return;
-  if (musicCtx.state === 'suspended') musicCtx.resume();
-
   var now = musicCtx.currentTime;
+
+  // Master gain — was too low at 0.22, now 0.55
   var master = musicCtx.createGain();
   master.gain.setValueAtTime(0, now);
-  master.gain.linearRampToValueAtTime(0.22, now + 3);
+  master.gain.linearRampToValueAtTime(0.55, now + 1.5);
   master.connect(musicCtx.destination);
-  musicNodes.push(master);
+  musicNodes = [master];
 
-  // Warm drone: two slightly detuned sine waves + sub octave
-  var baseFreq = 87.31; // F2
-  [1, 1.0034, 0.5].forEach(function(ratio, i){
+  // Base drone: warm low F2 with slow chorusing
+  var baseHz = 87.31;
+  [{r:1, g:0.5}, {r:1.005, g:0.45}, {r:0.5, g:0.6}].forEach(function(cfg){
     var osc = musicCtx.createOscillator();
-    osc.type = i === 2 ? 'sine' : 'sine';
-    osc.frequency.setValueAtTime(baseFreq * ratio, now);
-    // Slow microtonal drift
-    osc.frequency.linearRampToValueAtTime(baseFreq * ratio * 1.002, now + 30);
-    osc.frequency.linearRampToValueAtTime(baseFreq * ratio * 0.998, now + 60);
+    osc.type = cfg.r === 0.5 ? 'triangle' : 'sine';
+    osc.frequency.value = baseHz * cfg.r;
 
     var g = musicCtx.createGain();
-    g.gain.setValueAtTime(i === 2 ? 0.3 : 0.18, now);
-    // Slow breathing
-    var lfo = musicCtx.createOscillator();
-    lfo.type = 'sine';
-    lfo.frequency.setValueAtTime(0.07, now);
-    var lfoGain = musicCtx.createGain();
-    lfoGain.gain.setValueAtTime(0.06, now);
-    lfo.connect(lfoGain);
-    lfoGain.connect(g.gain);
-    lfo.start(now);
-    musicNodes.push(lfo);
+    g.gain.value = cfg.g;
 
     osc.connect(g);
     g.connect(master);
     osc.start(now);
-    musicNodes.push(osc);
+    musicNodes.push(osc, g);
   });
 
-  // Soft fifth harmonic — distant, shimmering
+  // Fifth harmonic shimmer (C above) — slow fade in
   var fifth = musicCtx.createOscillator();
   fifth.type = 'sine';
-  fifth.frequency.setValueAtTime(baseFreq * 1.5, now);
+  fifth.frequency.value = baseHz * 1.5;
   var fg = musicCtx.createGain();
   fg.gain.setValueAtTime(0, now);
-  fg.gain.linearRampToValueAtTime(0.08, now + 6);
-  // Slow shimmer LFO
-  var shLfo = musicCtx.createOscillator();
-  shLfo.type = 'sine';
-  shLfo.frequency.setValueAtTime(0.11, now);
-  var shLfoG = musicCtx.createGain();
-  shLfoG.gain.setValueAtTime(0.04, now);
-  shLfo.connect(shLfoG);
-  shLfoG.connect(fg.gain);
-  shLfo.start(now);
-  musicNodes.push(shLfo);
-
+  fg.gain.linearRampToValueAtTime(0.18, now + 8);
   fifth.connect(fg);
   fg.connect(master);
   fifth.start(now);
-  musicNodes.push(fifth);
+  musicNodes.push(fifth, fg);
+
+  // Slow amplitude breathing LFO on master
+  var breathe = musicCtx.createOscillator();
+  breathe.type = 'sine';
+  breathe.frequency.value = 0.09;
+  var breatheGain = musicCtx.createGain();
+  breatheGain.gain.value = 0.08;
+  breathe.connect(breatheGain);
+  breatheGain.connect(master.gain);
+  breathe.start(now);
+  musicNodes.push(breathe, breatheGain);
 
   musicPlaying = true;
 }
 
 function stopMusic(){
-  if (!musicPlaying) return;
+  if (!musicPlaying || !musicCtx) return;
   var now = musicCtx.currentTime;
-  // Fade out
-  var master = musicNodes[0];
-  master.gain.linearRampToValueAtTime(0, now + 2.5);
+  musicNodes[0].gain.linearRampToValueAtTime(0, now + 2);
   setTimeout(function(){
     musicNodes.forEach(function(n){
       try { n.stop(); } catch(e) {}
@@ -1530,7 +1523,7 @@ function stopMusic(){
     });
     musicNodes = [];
     musicPlaying = false;
-  }, 2800);
+  }, 2200);
 }
 
 document.getElementById('musicToggle').addEventListener('click', function(){
