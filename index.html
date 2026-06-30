@@ -1447,75 +1447,82 @@ var musicNodes = [];
 
 function startMusic(){
   if (musicPlaying) return;
-  if (!musicCtx) {
-    musicCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  if (musicCtx.state === 'suspended') {
-    musicCtx.resume().then(function(){
+  try {
+    if (!musicCtx) {
+      musicCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    console.log('[music] AudioContext state:', musicCtx.state);
+    if (musicCtx.state === 'suspended') {
+      musicCtx.resume().then(function(){
+        console.log('[music] resumed, state:', musicCtx.state);
+        _startMusicNow();
+      }).catch(function(e){
+        console.error('[music] resume failed:', e);
+      });
+    } else {
       _startMusicNow();
-    });
-  } else {
-    _startMusicNow();
+    }
+  } catch(e) {
+    console.error('[music] error:', e);
   }
 }
 
 function _startMusicNow(){
   if (musicPlaying) return;
+  console.log('[music] starting oscillators...');
   var now = musicCtx.currentTime;
 
-  // Master gain — was too low at 0.22, now 0.55
+  // Master at 0.5 — clearly audible
   var master = musicCtx.createGain();
   master.gain.setValueAtTime(0, now);
-  master.gain.linearRampToValueAtTime(0.55, now + 1.5);
+  master.gain.linearRampToValueAtTime(0.5, now + 1.5);
   master.connect(musicCtx.destination);
   musicNodes = [master];
 
-  // Base drone: warm low F2 with slow chorusing
-  var baseHz = 87.31;
-  [{r:1, g:0.5}, {r:1.005, g:0.45}, {r:0.5, g:0.6}].forEach(function(cfg){
+  // F3 = 174.6 Hz — audible on any speaker (was F2=87Hz, too low for laptops)
+  var baseHz = 174.6;
+  [{r:1, g:0.35, type:'sine'}, {r:1.005, g:0.3, type:'sine'}, {r:0.5, g:0.45, type:'triangle'}].forEach(function(cfg){
     var osc = musicCtx.createOscillator();
-    osc.type = cfg.r === 0.5 ? 'triangle' : 'sine';
+    osc.type = cfg.type;
     osc.frequency.value = baseHz * cfg.r;
-
     var g = musicCtx.createGain();
     g.gain.value = cfg.g;
-
     osc.connect(g);
     g.connect(master);
     osc.start(now);
     musicNodes.push(osc, g);
   });
 
-  // Fifth harmonic shimmer (C above) — slow fade in
+  // Soft fifth (C4) shimmer
   var fifth = musicCtx.createOscillator();
   fifth.type = 'sine';
-  fifth.frequency.value = baseHz * 1.5;
+  fifth.frequency.value = baseHz * 1.5; // 262 Hz, C4
   var fg = musicCtx.createGain();
   fg.gain.setValueAtTime(0, now);
-  fg.gain.linearRampToValueAtTime(0.18, now + 8);
+  fg.gain.linearRampToValueAtTime(0.14, now + 8);
   fifth.connect(fg);
   fg.connect(master);
   fifth.start(now);
   musicNodes.push(fifth, fg);
 
-  // Slow amplitude breathing LFO on master
-  var breathe = musicCtx.createOscillator();
-  breathe.type = 'sine';
-  breathe.frequency.value = 0.09;
-  var breatheGain = musicCtx.createGain();
-  breatheGain.gain.value = 0.08;
-  breathe.connect(breatheGain);
-  breatheGain.connect(master.gain);
-  breathe.start(now);
-  musicNodes.push(breathe, breatheGain);
+  // Breathing LFO on master
+  var lfo = musicCtx.createOscillator();
+  lfo.type = 'sine';
+  lfo.frequency.value = 0.09;
+  var lfoG = musicCtx.createGain();
+  lfoG.gain.value = 0.06;
+  lfo.connect(lfoG);
+  lfoG.connect(master.gain);
+  lfo.start(now);
+  musicNodes.push(lfo, lfoG);
 
   musicPlaying = true;
+  console.log('[music] playing. Osc count:', musicNodes.length);
 }
 
 function stopMusic(){
   if (!musicPlaying || !musicCtx) return;
-  var now = musicCtx.currentTime;
-  musicNodes[0].gain.linearRampToValueAtTime(0, now + 2);
+  musicNodes[0].gain.linearRampToValueAtTime(0, musicCtx.currentTime + 2);
   setTimeout(function(){
     musicNodes.forEach(function(n){
       try { n.stop(); } catch(e) {}
@@ -1523,6 +1530,7 @@ function stopMusic(){
     });
     musicNodes = [];
     musicPlaying = false;
+    console.log('[music] stopped');
   }, 2200);
 }
 
