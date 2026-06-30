@@ -419,6 +419,7 @@ textarea.compare-answer{min-height:80px;line-height:1.85}
     <div class="gate-rule">禁止给建议 · 禁止评价</div>
     <div class="gate-rule">不加好友 · 说完即散</div>
     <div class="gate-rule">秘密只有你自己能看见</div>
+    <div class="gate-rule">需要邀请码才能注册</div>
     <div class="gate-rule">36 岁以下谢绝入内</div>
   </div>
   <div class="gate-actions">
@@ -441,6 +442,7 @@ textarea.compare-answer{min-height:80px;line-height:1.85}
     <div class="form-row"><label>邮箱</label><input type="email" id="authEmail" placeholder="你的邮箱"></div>
     <div class="form-row"><label>密码 <span style="color:var(--text4);font-size:11px">（这是你的钥匙，丢了就找不回来了）</span></label><input type="password" id="authPwd" placeholder="至少 6 位"></div>
     <div class="form-row" id="authPwdConfirmRow"><label>再输一次密码</label><input type="password" id="authPwd2" placeholder="确认密码"></div>
+    <div class="form-row" id="authInviteRow"><label>邀请码 <span style="color:var(--text4);font-size:11px">（需要邀请码才能注册）</span></label><input type="text" id="authInvite" placeholder="输入邀请码" autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:2px"></div>
     <div class="auth-err" id="authErr"></div>
     <button class="auth-submit" id="authSubmit">进 入</button>
     <div class="auth-safety">你写下的一切，只有你自己能看见。<br>我们无法重置密码——密码即钥匙，请牢记。</div>
@@ -668,6 +670,35 @@ var PUBLIC_SCROLL = [
 // ══════════════════════════════════════════════════
 var STORE_KEY = 'huorengan_v1';
 
+// ── INVITE CODES ──
+var INVITE_KEY = 'huorengan_invites';
+var DEFAULT_INVITES = ['HUOREN2025','ZISHU2025','XIUDAO2025','HUOREN2026','ZISHU2026'];
+function loadInvites(){
+  var raw = localStorage.getItem(INVITE_KEY);
+  if (!raw) {
+    var seed = { valid: {}, used: {} };
+    for (var i=0;i<DEFAULT_INVITES.length;i++) {
+      seed.valid[DEFAULT_INVITES[i]] = { createdAt: Date.now(), note: '种子邀请码' };
+    }
+    saveInvites(seed);
+    return seed;
+  }
+  try { return JSON.parse(raw); } catch(e) { return { valid:{}, used:{} }; }
+}
+function saveInvites(data){
+  try { localStorage.setItem(INVITE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function consumeInvite(code, email){
+  code = code.trim().toUpperCase();
+  var inv = loadInvites();
+  if (inv.used[code]) { return { ok:false, err:'这个邀请码已经被用过了' }; }
+  if (!inv.valid[code]) { return { ok:false, err:'邀请码无效' }; }
+  inv.used[code] = { email: email, usedAt: Date.now() };
+  delete inv.valid[code];
+  saveInvites(inv);
+  return { ok:true };
+}
+
 function loadStore() {
   try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch(e) { return {}; }
 }
@@ -778,6 +809,7 @@ function setAuthMode(mode) {
   document.getElementById('authTabReg').classList.toggle('on', mode==='register');
   document.getElementById('authTabLogin').classList.toggle('on', mode==='login');
   document.getElementById('authPwdConfirmRow').style.display = mode==='register'?'block':'none';
+  document.getElementById('authInviteRow').style.display = mode==='register'?'block':'none';
   document.getElementById('authErr').textContent = '';
   document.getElementById('authTitle').textContent = mode==='register'?'开始修行':'回来了';
   document.getElementById('authHint').textContent = mode==='register'
@@ -803,6 +835,10 @@ document.getElementById('authSubmit').addEventListener('click', function(){
   if (authMode==='register') {
     if (pwd !== pwd2) { errEl.textContent = '两次密码不一致'; return; }
     if (getUser(email)) { errEl.textContent = '这个邮箱已经注册过了'; return; }
+    var inviteCode = document.getElementById('authInvite').value.trim();
+    if (!inviteCode) { errEl.textContent = '请输入邀请码'; return; }
+    var inviteResult = consumeInvite(inviteCode, email);
+    if (!inviteResult.ok) { errEl.textContent = inviteResult.err; return; }
     var now = Date.now();
     saveUser(email, {
       email: email,
