@@ -1370,7 +1370,7 @@ function renderAdmin(){
   document.getElementById('adminUsersTable').innerHTML = userHtml;
 
   // Invites table
-  var inviteHtml = '<table class="admin-table"><tr><th>邀请码</th><th>状态</th><th>使用者</th><th>使用时间</th></tr>';
+  var inviteHtml = '<table class="admin-table"><tr><th>邀请码</th><th>状态</th><th>使用者</th><th>使用时间</th><th>推广链接</th></tr>';
   var codes = {};
   for (var c in inv.valid) { if (inv.valid.hasOwnProperty(c)) codes[c] = { status:'valid', info:inv.valid[c] }; }
   for (var c2 in inv.used) { if (inv.used.hasOwnProperty(c2)) codes[c2] = { status:'used', info:inv.used[c2] }; }
@@ -1390,11 +1390,29 @@ function renderAdmin(){
         var d2 = new Date(cd.info.usedAt);
         timeStr = d2.getFullYear()+'-'+String(d2.getMonth()+1).padStart(2,'0')+'-'+String(d2.getDate()).padStart(2,'0');
       }
-      inviteHtml += '<tr><td style="letter-spacing:1px">'+escHtml(code)+'</td><td>'+badge+'</td><td>'+user+'</td><td>'+timeStr+'</td></tr>';
+      var linkCell = cd.status==='valid'
+        ? '<span style="color:var(--gold);cursor:pointer;font-size:11px" onclick="copyPromoLink(\''+escHtml(code)+'\')" title="点击复制推广链接">📋 复制链接</span>'
+        : '<span style="color:var(--text4);font-size:11px">—</span>';
+      inviteHtml += '<tr><td style="letter-spacing:1px">'+escHtml(code)+'</td><td>'+badge+'</td><td>'+user+'</td><td>'+timeStr+'</td><td>'+linkCell+'</td></tr>';
     }
     inviteHtml += '</table>';
   }
   document.getElementById('adminInvitesTable').innerHTML = inviteHtml;
+}
+
+function copyPromoLink(code){
+  var link = window.location.origin + window.location.pathname + '?invite=' + encodeURIComponent(code);
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(link).then(function(){
+      showToast('推广链接已复制！');
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = link; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('推广链接已复制！');
+  }
 }
 
 function escHtml(str){
@@ -1402,6 +1420,34 @@ function escHtml(str){
   d.textContent = str;
   return d.innerHTML;
 }
+
+// ══════════════════════════════════════════════════
+// URL params
+// ══════════════════════════════════════════════════
+(function(){
+  var params = new URLSearchParams(window.location.search);
+  var inviteParam = params.get('invite');
+  if (inviteParam) {
+    // Pre-fill invite code when user navigates to register
+    var origSetAuth = setAuthMode;
+    setAuthMode = function(mode) {
+      origSetAuth(mode);
+      if (mode === 'register') {
+        document.getElementById('authInvite').value = inviteParam.toUpperCase();
+      }
+    };
+    // Also inject into gate's register click
+    var gateRegBtn = document.getElementById('gateRegister');
+    if (gateRegBtn) {
+      var origClick = gateRegBtn.onclick;
+      gateRegBtn.addEventListener('click', function(){
+        setTimeout(function(){
+          document.getElementById('authInvite').value = inviteParam.toUpperCase();
+        }, 50);
+      });
+    }
+  }
+})();
 
 // ══════════════════════════════════════════════════
 // INIT: check session
