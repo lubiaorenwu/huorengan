@@ -380,6 +380,44 @@ textarea.compare-answer{min-height:80px;line-height:1.85}
   white-space:nowrap}
 .toast.show{opacity:1}
 
+/* ── ADMIN ── */
+#adminOverlay{display:none;position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,.82);backdrop-filter:blur(6px);
+  align-items:center;justify-content:center}
+#adminOverlay.show{display:flex}
+.admin-panel{background:var(--bg);border:.5px solid var(--gold-border);
+  border-radius:20px;width:90%;max-width:640px;max-height:80vh;
+  overflow-y:auto;padding:32px}
+.admin-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.admin-head h3{font-size:20px;color:var(--gold);letter-spacing:2px}
+.admin-close{width:32px;height:32px;border-radius:50%;border:.5px solid var(--border2);
+  background:transparent;color:var(--text3);font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .2s}
+.admin-close:hover{color:var(--gold);border-color:var(--gold-border)}
+.admin-stats{display:flex;gap:12px;margin-bottom:28px;flex-wrap:wrap}
+.admin-stat{flex:1;min-width:100px;background:var(--bg2);border:.5px solid var(--border);
+  border-radius:14px;padding:16px;text-align:center}
+.admin-stat-num{font-size:28px;color:var(--gold);font-family:ui-sans-serif,system-ui,sans-serif}
+.admin-stat-label{font-size:11px;color:var(--text3);font-family:ui-sans-serif,system-ui,sans-serif;margin-top:4px}
+.admin-section{margin-bottom:24px}
+.admin-section h4{font-size:14px;color:var(--text2);margin-bottom:12px;letter-spacing:1px;
+  font-family:ui-sans-serif,system-ui,sans-serif}
+.admin-table{width:100%;border-collapse:collapse}
+.admin-table th{text-align:left;padding:8px 10px;font-size:11px;color:var(--text4);
+  font-family:ui-sans-serif,system-ui,sans-serif;font-weight:400;
+  border-bottom:.5px solid var(--border);letter-spacing:.5px}
+.admin-table td{padding:8px 10px;font-size:13px;color:var(--text2);
+  border-bottom:.5px solid var(--border);font-family:ui-sans-serif,system-ui,sans-serif}
+.admin-table tr:hover td{background:var(--bg2)}
+.admin-empty{font-size:13px;color:var(--text3);font-family:ui-sans-serif,system-ui,sans-serif;padding:16px 0}
+.admin-code-badge{display:inline-block;padding:2px 10px;border-radius:10px;
+  font-size:11px;font-family:ui-sans-serif,system-ui,sans-serif;letter-spacing:1px}
+.admin-code-badge.used{background:var(--red-dim);color:var(--red);border:.5px solid var(--red-border)}
+.admin-code-badge.valid{background:var(--gold-dim);color:var(--gold2);border:.5px solid var(--gold-border)}
+.admin-gate-link{font-size:10px;color:var(--text4);cursor:pointer;
+  font-family:ui-sans-serif,system-ui,sans-serif;transition:color .2s;margin-top:28px;text-align:center}
+.admin-gate-link:hover{color:var(--text3)}
+
 @media(max-width:500px){
   .gate-title{font-size:34px}
   .compare-grid{grid-template-columns:1fr}
@@ -1274,6 +1312,98 @@ function renderPublicCards() {
 }
 
 // ══════════════════════════════════════════════════
+// ADMIN
+// ══════════════════════════════════════════════════
+document.getElementById('adminClose').addEventListener('click', function(){
+  document.getElementById('adminOverlay').classList.remove('show');
+});
+document.getElementById('adminOverlay').addEventListener('click', function(e){
+  if (e.target === this) this.classList.remove('show');
+});
+document.addEventListener('keydown', function(e){
+  if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+    e.preventDefault();
+    renderAdmin();
+    document.getElementById('adminOverlay').classList.toggle('show');
+  }
+});
+
+function renderAdmin(){
+  var store = loadStore();
+  var users = store.users || {};
+  var userList = [];
+  for (var email in users) {
+    if (users.hasOwnProperty(email)) {
+      userList.push({ email: email, data: users[email] });
+    }
+  }
+  userList.sort(function(a,b){ return b.data.createdAt - a.data.createdAt; });
+
+  // Stats
+  var inv = loadInvites();
+  var validCount = Object.keys(inv.valid).length;
+  var usedCount = Object.keys(inv.used).length;
+  document.getElementById('adminStats').innerHTML =
+    '<div class="admin-stat"><div class="admin-stat-num">'+userList.length+'</div><div class="admin-stat-label">注册用户</div></div>'+
+    '<div class="admin-stat"><div class="admin-stat-num">'+validCount+'</div><div class="admin-stat-label">剩余邀请码</div></div>'+
+    '<div class="admin-stat"><div class="admin-stat-num">'+usedCount+'</div><div class="admin-stat-label">已用邀请码</div></div>';
+
+  // Users table
+  var userHtml = '';
+  if (userList.length === 0) {
+    userHtml = '<div class="admin-empty">还没有人注册</div>';
+  } else {
+    userHtml = '<table class="admin-table"><tr><th>邮箱</th><th>注册时间</th><th>胶囊数</th></tr>';
+    for (var ui=0;ui<userList.length;ui++) {
+      var u = userList[ui];
+      var date = new Date(u.data.createdAt);
+      var dateStr = date.getFullYear()+'-'+
+        String(date.getMonth()+1).padStart(2,'0')+'-'+
+        String(date.getDate()).padStart(2,'0')+' '+
+        String(date.getHours()).padStart(2,'0')+':'+
+        String(date.getMinutes()).padStart(2,'0');
+      var capsules = (u.data.capsules && u.data.capsules.length) || 0;
+      userHtml += '<tr><td>'+escHtml(u.email)+'</td><td>'+dateStr+'</td><td>'+capsules+'</td></tr>';
+    }
+    userHtml += '</table>';
+  }
+  document.getElementById('adminUsersTable').innerHTML = userHtml;
+
+  // Invites table
+  var inviteHtml = '<table class="admin-table"><tr><th>邀请码</th><th>状态</th><th>使用者</th><th>使用时间</th></tr>';
+  var codes = {};
+  for (var c in inv.valid) { if (inv.valid.hasOwnProperty(c)) codes[c] = { status:'valid', info:inv.valid[c] }; }
+  for (var c2 in inv.used) { if (inv.used.hasOwnProperty(c2)) codes[c2] = { status:'used', info:inv.used[c2] }; }
+  var codeKeys = Object.keys(codes).sort();
+  if (codeKeys.length === 0) {
+    inviteHtml = '<div class="admin-empty">暂无邀请码数据</div>';
+  } else {
+    for (var ci=0;ci<codeKeys.length;ci++) {
+      var code = codeKeys[ci];
+      var cd = codes[code];
+      var badge = cd.status==='valid'
+        ? '<span class="admin-code-badge valid">可用</span>'
+        : '<span class="admin-code-badge used">已用</span>';
+      var user = cd.status==='used' ? escHtml(cd.info.email||'') : '—';
+      var timeStr = '—';
+      if (cd.info.usedAt) {
+        var d2 = new Date(cd.info.usedAt);
+        timeStr = d2.getFullYear()+'-'+String(d2.getMonth()+1).padStart(2,'0')+'-'+String(d2.getDate()).padStart(2,'0');
+      }
+      inviteHtml += '<tr><td style="letter-spacing:1px">'+escHtml(code)+'</td><td>'+badge+'</td><td>'+user+'</td><td>'+timeStr+'</td></tr>';
+    }
+    inviteHtml += '</table>';
+  }
+  document.getElementById('adminInvitesTable').innerHTML = inviteHtml;
+}
+
+function escHtml(str){
+  var d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// ══════════════════════════════════════════════════
 // INIT: check session
 // ══════════════════════════════════════════════════
 (function init(){
@@ -1283,5 +1413,26 @@ function renderPublicCards() {
   }
 })();
 </script>
+
+<!-- ══ ADMIN PANEL ══ -->
+<div id="adminOverlay">
+  <div class="admin-panel">
+    <div class="admin-head">
+      <h3>⛩ 管理</h3>
+      <div class="admin-close" id="adminClose">✕</div>
+    </div>
+    <div class="admin-stats" id="adminStats"></div>
+    <div class="admin-section">
+      <h4>注册用户</h4>
+      <div id="adminUsersTable"></div>
+    </div>
+    <div class="admin-section">
+      <h4>邀请码</h4>
+      <div id="adminInvitesTable"></div>
+    </div>
+    <div class="admin-gate-link" id="adminGateLink">Ctrl+Shift+A 打开管理面板</div>
+  </div>
+</div>
+
 </body>
 </html>
