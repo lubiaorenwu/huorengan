@@ -1338,7 +1338,7 @@ document.getElementById('adminOverlay').addEventListener('click', function(e){
   if (e.target === this) this.classList.remove('show');
 });
 document.addEventListener('keydown', function(e){
-  if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+  if (e.ctrlKey && e.shiftKey && (e.key === 'H' || e.key === 'h')) {
     e.preventDefault();
     renderAdmin();
     document.getElementById('adminOverlay').classList.toggle('show');
@@ -1552,6 +1552,10 @@ document.getElementById('musicToggle').addEventListener('click', function(){
 // ══════════════════════════════════════════════════
 (function(){
   var params = new URLSearchParams(window.location.search);
+  // ?admin — open admin panel directly
+  if (params.has('admin')) {
+    setTimeout(function(){ renderAdmin(); document.getElementById('adminOverlay').classList.add('show'); }, 200);
+  }
   var inviteParam = params.get('invite');
   if (inviteParam) {
     // Pre-fill invite code when user navigates to register
@@ -1602,7 +1606,7 @@ document.getElementById('musicToggle').addEventListener('click', function(){
       <h4>邀请码</h4>
       <div id="adminInvitesTable"></div>
     </div>
-    <div class="admin-gate-link" id="adminGateLink">Ctrl+Shift+A 打开管理面板</div>
+    <div class="admin-gate-link" id="adminGateLink">Ctrl+Shift+H 或 ?admin 打开管理面板</div>
   </div>
 </div>
 
